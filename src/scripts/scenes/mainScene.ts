@@ -1,4 +1,4 @@
-import { ExtendedObject3D, Scene3D } from '@enable3d/phaser-extension'
+import { ExtendedObject3D, Scene3D, THREE } from '@enable3d/phaser-extension'
 import { ApplyToonShader } from '../shaders/ToonShader';
 
 export default class MainScene extends Scene3D {
@@ -19,10 +19,12 @@ export default class MainScene extends Scene3D {
         const box2 = this.third.physics.add.box({ x: -1, y: 2 })
         ApplyToonShader(box2, 6);
 
-        this.createRobot(-1, 0, 3, true);
-        this.createRobot(1, 0, 3, false);
+        this.createRobot(-3, 0, 3, true);
+        this.createRobot(3, 0, 3, false);
 
-        this.createKnight(0, 2, -5, true).then(knight=>console.log(knight));
+        this.createKnight(0, 2, -5, true);
+
+        this.third.lights.pointLight({color: 'white', intensity: 3, distance: 10 }).position.set(0, 1, 0);
     }
 
     update() { }
@@ -42,7 +44,7 @@ export default class MainScene extends Scene3D {
         robot.traverse(child => {
             // Enable toon shading if requested
             if (child.isMesh && toonShade) {
-                ApplyToonShader(child, 8);
+                ApplyToonShader(child, 4);
             }
         })
 
@@ -50,7 +52,7 @@ export default class MainScene extends Scene3D {
             if (child.isMesh) child.castShadow = child.receiveShadow = true
         })
 
-        robot.scale.set(0.01, 0.01, 0.01);
+        robot.scale.set(0.03, 0.03, 0.03);
         robot.position.set(x, y, z);
 
         this.third.add.existing(robot)
@@ -91,7 +93,7 @@ export default class MainScene extends Scene3D {
         knight.traverse(child => {
             // Enable toon shading if requested
             if (child.isMesh && toonShade) {
-                ApplyToonShader(child, 8);
+                ApplyToonShader(child, 4);
             }
         })
 
@@ -99,7 +101,7 @@ export default class MainScene extends Scene3D {
             if (child.isMesh) child.castShadow = child.receiveShadow = true
         })
 
-        knight.scale.set(0.01, 0.01, 0.01);
+        knight.scale.set(0.03, 0.03, 0.03);
         knight.position.set(x, y, z);
 
         this.third.add.existing(knight);
