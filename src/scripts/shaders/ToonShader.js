@@ -1,8 +1,8 @@
-import { hookToMethod } from "../utils/hook";
+import { hookToMethod } from '../utils/hook';
 
 export function ApplyToonShader(mesh, layers) {
     const material = mesh.material;
-    
+
     const toonShaderFragment = `// Now try to set all colors to some preset magnitudes
     vec3 before = gl_FragColor.rgb;
 
@@ -27,11 +27,10 @@ export function ApplyToonShader(mesh, layers) {
     }
     // Scale the color so its magnitude is equal to the threshold
     gl_FragColor.rgb = before * (thresholds[index] / mag);
-}`
+}`;
 
     hookToMethod(material, 'onBeforeCompile', (shader) => {
         // Replace the last character of the fragment shader with new code
         shader.fragmentShader = `${shader.fragmentShader.slice(0, -1)}\n${toonShaderFragment}`;
     });
-
 }
