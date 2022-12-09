@@ -3,6 +3,7 @@ import { ApplyToonShader } from '../shaders/ToonShader';
 import { CustomOutlinePass } from '../shaders/CustomOutlinePass.js';
 import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader.js';
 import { hookToMethod } from '../utils/hook';
+import { MeshPhongMaterial } from 'three';
 
 export default class MainScene extends Scene3D {
     constructor() {
@@ -18,26 +19,10 @@ export default class MainScene extends Scene3D {
         this.third.warpSpeed();
         // this.third.physics.debug?.enable();
 
-        // Monkey patch the MeshNormalMaterial vertex shader to make normals update with animation.
-        // This is a hack, but it works.
-        THREE.MeshNormalMaterial.prototype.onBeforeCompile = function (shader) {
-            // Get the old vertex shader
-            const oldVertexShader = shader.vertexShader;
-            // Create a new vertex shader where normals are relative to worldspace
-            const newVertexShader = oldVertexShader.replace(
-                '#include <defaultnormal_vertex>',
-                THREE.ShaderChunk['defaultnormal_vertex'].replace(
-                    'transformedNormal = normalMatrix * transformedNormal;',
-                    // take into consideration only the model matrix
-                    'transformedNormal =  mat3(modelMatrix) * transformedNormal;'
-                )
-            );
-        };
-
         // adds a box with physics
-        const box1 = this.third.add.box({ x: 1, y: 2 });
-        const box2 = this.third.physics.add.box({ x: -1, y: 2 });
-        ApplyToonShader(box2, 6);
+        // const box1 = this.third.add.box({ x: 1, y: 2 });
+        // const box2 = this.third.physics.add.box({ x: -1, y: 2 });
+        // ApplyToonShader(box2, 6);
 
         const depthTexture = new THREE.DepthTexture(window.innerWidth, window.innerHeight);
         const renderTarget = new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight, {
@@ -93,16 +78,24 @@ export default class MainScene extends Scene3D {
 
             console.log(ply);
 
-            hookToMethod(ply.animationMixer, 'update', ()=>{
+            let normalMaterial;
+
+            hookToMethod(ply.animationMixer, 'update', () => {
                 // Loop through the object's children
                 ply.traverse((child) => {
                     // If the child is a mesh, update its morph targets
                     if (child.isMesh) {
-                        // console.log("Mesh found!");
-                        child.updateMorphTargets();
-                        // child.geometry.computeVertexNormals();
-                        child.geometry.morphTargetsRelative = true;
-                        child.geometry.attributes.normal.needsUpdate = true;
+                        // Clone the child material
+                        if (!normalMaterial) {
+                            normalMaterial = new MeshPhongMaterial();
+                            normalMaterial.copy(child.material);
+                            normalMaterial.onBeforeCompile = (shader) => {
+                                shader.fragmentShader = `${shader.fragmentShader.slice(0, -1)}
+                                gl_FragColor = vec4(normalize(vNormal), 1.0);
+                                }`;
+                            };
+                            customOutline.normalMaterialOverride = normalMaterial;
+                        }
                     }
                 });
             });

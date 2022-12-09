@@ -27,10 +27,19 @@ export function ApplyToonShader(mesh, layers) {
     }
     // Scale the color so its magnitude is equal to the threshold
     gl_FragColor.rgb = before * (thresholds[index] / mag);
+
+    // #ifdef PHONG
+    // gl_FragColor = vec4(vec3(vNormal), 1.0);
+    // #endif
 }`;
 
-    hookToMethod(material, 'onBeforeCompile', (shader) => {
+    material.onBeforeCompile = (shader) => {
         // Replace the last character of the fragment shader with new code
         shader.fragmentShader = `${shader.fragmentShader.slice(0, -1)}\n${toonShaderFragment}`;
-    });
+    };
+
+    // hookToMethod(material, 'onBeforeCompile', (shader) => {
+    //     // Replace the last character of the fragment shader with new code
+    //     shader.fragmentShader = `${shader.fragmentShader.slice(0, -1)}\n${toonShaderFragment}`;
+    // });
 }
