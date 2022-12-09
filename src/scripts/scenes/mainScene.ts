@@ -12,12 +12,14 @@ import { CustomOutlinePass } from '../shaders/CustomOutlinePass.js';
 import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader.js';
 import { hookToMethod } from '../utils/hook';
 import { Vector3 } from 'three';
+import PCSoldier from '../objects/PCSoldier';
 
 export default class MainScene extends Scene3D {
     prevMouse: { x: number; y: number } | null = null;
     controls: ThirdPersonControls | null = null;
-    player: ExtendedObject3D | null = null;
+    player: PCSoldier | null = null;
     key_shift: Phaser.Input.Keyboard.Key | null = null;
+    cinematic: boolean = false;
 
     constructor() {
         super({ key: 'MainScene' });
@@ -33,15 +35,14 @@ export default class MainScene extends Scene3D {
         });
         // Create phaser key for shift
         this.key_shift = this.input.keyboard.addKey('SHIFT');
+        // Listener to toggle cinematic mode
+        this.input.keyboard.on('keydown-C', () => {
+            this.cinematic = !this.cinematic;
+        });
 
         // creates a nice scene
         this.third.warpSpeed();
         // this.third.physics.debug?.enable();
-
-        // adds a box with physics
-        // const box1 = this.third.add.box({ x: 1, y: 2 });
-        // const box2 = this.third.physics.add.box({ x: -1, y: 2 });
-        // ApplyToonShader(box2, 6);
 
         const depthTexture = new THREE.DepthTexture(window.innerWidth, window.innerHeight);
         const renderTarget = new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight, {
@@ -66,7 +67,7 @@ export default class MainScene extends Scene3D {
         effectFXAA.uniforms['resolution'].value.set(1 / window.innerWidth, 1 / window.innerHeight);
         this.third.composer.addPass(effectFXAA);
 
-        const prom_ply = this.createKnight(0, 2, -5, true);
+        const prom_ply = this.spawnPlayer(0, 2, -5, true);
         prom_ply.then((ply) => {
             this.player = ply;
             const speed = 5.0;
@@ -78,7 +79,7 @@ export default class MainScene extends Scene3D {
                 // Set the body's velocity
                 ply.body.setVelocity(velocity.x, 0, velocity.z);
                 // Animation
-                if (ply.anims.current != 'Unarmed Walk Forward') ply.anims.play('Unarmed Walk Forward');
+                if (ply.anims.current != 'Walk') ply.anims.play('Walk');
             });
             this.input.keyboard.on('keyup-W', () => {
                 ply.body.setVelocity(0, 0, 0);
@@ -124,19 +125,13 @@ export default class MainScene extends Scene3D {
                 ply.body.setVelocity(0, 0, 0);
             });
 
-            this.controls = new ThirdPersonControls(this.third.camera, ply, {
-                offset: new THREE.Vector3(-2, 4, 0),
-                targetRadius: 7,
-                theta: 180, // in degrees
-                phi: 25
-            });
+            if (this.player) this.controls = this.player.mountCamera();
 
             // Add controls for phi and theta
             this.input.on('pointermove', (ptr: Phaser.Input.Pointer) => {
                 if (ptr.locked) {
                     this.controls?.update(ptr.movementX, ptr.movementY);
-                }
-                else if (this.prevMouse && this.key_shift?.isDown) {
+                } else if (this.prevMouse && this.key_shift?.isDown) {
                     const dx = ptr.x - this.prevMouse.x;
                     const dy = ptr.y - this.prevMouse.y;
                     this.controls?.update(dx, dy);
@@ -159,36 +154,30 @@ export default class MainScene extends Scene3D {
 
     update() {
         if (this.controls) this.controls.update(0, 0);
+        if (this.input.mousePointer.locked && !this.cinematic) this.player?.update();
     }
 
-    async createKnight(x, y, z, toonShade): Promise<ExtendedObject3D> {
-        const knight = new ExtendedObject3D();
+    async spawnPlayer(x, y, z, toonShade): Promise<PCSoldier> {
+        const soldier: PCSoldier = new PCSoldier(this, false);
+        await soldier.load();
+        soldier.anims.play('Idle');
 
-        const fbx = await this.third.load.fbx('/assets/fbx/castle_guard_01.fbx');
-        const animations = ['Unarmed Walk Forward'];
-
-        knight.add(fbx);
-        this.third.animationMixers.add(knight.anims.mixer);
-
-        knight.anims.add('Idle', fbx.animations[0]);
-        knight.anims.play('Idle');
-
-        knight.traverse((child) => {
+        soldier.traverse((child) => {
             // Enable toon shading if requested
             if (child.isMesh && toonShade) {
                 ApplyToonShader(child, 4);
             }
         });
 
-        knight.traverse((child) => {
+        soldier.traverse((child) => {
             if (child.isMesh) child.castShadow = child.receiveShadow = true;
         });
 
-        knight.scale.set(0.03, 0.03, 0.03);
-        knight.position.set(x, y, z);
+        soldier.scale.set(0.03, 0.03, 0.03);
+        soldier.position.set(x, y, z);
 
-        this.third.add.existing(knight);
-        this.third.physics.add.existing(knight, {
+        this.third.add.existing(soldier);
+        this.third.physics.add.existing(soldier, {
             shape: 'box',
             width: 50,
             height: 160,
@@ -201,23 +190,6 @@ export default class MainScene extends Scene3D {
             mass: 1000
         });
 
-        // load more animations
-        for (let key of animations) {
-            if (key !== 'Idle') {
-                const fbx = await this.third.load.fbx(`/assets/fbx/${key}.fbx`);
-                knight.anims.add(key, fbx.animations[0]);
-            }
-        }
-
-        this.time.addEvent({
-            delay: 2500,
-            loop: true,
-            callback: () => {
-                const anim = Phaser.Math.RND.pick(animations);
-                // knight.anims.play(anim, 350);
-            }
-        });
-
-        return knight;
+        return soldier;
     }
 }
