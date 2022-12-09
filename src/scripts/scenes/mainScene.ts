@@ -11,13 +11,15 @@ import { ApplyToonShader } from '../shaders/ToonShader';
 import { CustomOutlinePass } from '../shaders/CustomOutlinePass.js';
 import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader.js';
 import { hookToMethod } from '../utils/hook';
+import { Vector3 } from 'three';
 
 export default class MainScene extends Scene3D {
-    controls: ThirdPersonControls | null;
+    prevMouse: { x: number; y: number } | null = null;
+    controls: ThirdPersonControls | null = null;
+    player: ExtendedObject3D | null = null;
 
     constructor() {
         super({ key: 'MainScene' });
-        this.controls = null;
     }
 
     init() {
@@ -59,50 +61,57 @@ export default class MainScene extends Scene3D {
 
         const prom_ply = this.createKnight(0, 2, -5, true);
         prom_ply.then((ply) => {
+            this.player = ply;
+            const speed = 5.0;
             this.input.keyboard.on('keydown-W', () => {
                 // Set the player's velocity based on the camera rotation
-                const cameraRotation = this.third.camera.rotation;
-                ply.body.setVelocity(
-                    Math.sin(cameraRotation.y) * 10,
-                    0,
-                    Math.cos(cameraRotation.y) * 10
-                );
+                let facing: Vector3 = new Vector3();
+                this.third.camera.getWorldDirection(facing);
+                const velocity = facing.multiplyScalar(speed);
+                // Set the body's velocity
+                ply.body.setVelocity(velocity.x, 0, velocity.z);
+                // Animation
+                if (ply.anims.current != 'Unarmed Walk Forward') ply.anims.play('Unarmed Walk Forward');
             });
             this.input.keyboard.on('keyup-W', () => {
                 ply.body.setVelocity(0, 0, 0);
+                if (ply.anims.current != 'Idle') ply.anims.play('Idle');
             });
             this.input.keyboard.on('keydown-A', () => {
                 // Set the player's velocity based on the camera rotation
-                const cameraRotation = this.third.camera.rotation;
-                ply.body.setVelocity(
-                    Math.sin(cameraRotation.y + Math.PI / 2) * 10,
-                    0,
-                    Math.cos(cameraRotation.y + Math.PI / 2) * 10
-                );
+                let facing: Vector3 = new Vector3();
+                this.third.camera.getWorldDirection(facing);
+                // Rotate the facing vector by 90 degrees left
+                const left = facing.applyAxisAngle(new Vector3(0, 1, 0), Math.PI / 2);
+                const velocity = left.multiplyScalar(speed);
+                // Set the body's velocity
+                ply.body.setVelocity(velocity.x, 0, velocity.z);
             });
             this.input.keyboard.on('keyup-A', () => {
                 ply.body.setVelocity(0, 0, 0);
             });
             this.input.keyboard.on('keydown-S', () => {
                 // Set the player's velocity based on the camera rotation
-                const cameraRotation = this.third.camera.rotation;
-                ply.body.setVelocity(
-                    Math.sin(cameraRotation.y + Math.PI) * 10,
-                    0,
-                    Math.cos(cameraRotation.y + Math.PI) * 10
-                );
+                let facing: Vector3 = new Vector3();
+                this.third.camera.getWorldDirection(facing);
+                // Negate the facing vector to get the opposite direction
+                // Also reduce speed by half when going backwards
+                const velocity = facing.multiplyScalar(-speed / 2);
+                // Set the body's velocity
+                ply.body.setVelocity(velocity.x, 0, velocity.z);
             });
             this.input.keyboard.on('keyup-S', () => {
                 ply.body.setVelocity(0, 0, 0);
             });
             this.input.keyboard.on('keydown-D', () => {
                 // Set the player's velocity based on the camera rotation
-                const cameraRotation = this.third.camera.rotation;
-                ply.body.setVelocity(
-                    Math.sin(cameraRotation.y - Math.PI / 2) * 10,
-                    0,
-                    Math.cos(cameraRotation.y - Math.PI / 2) * 10
-                );
+                let facing: Vector3 = new Vector3();
+                this.third.camera.getWorldDirection(facing);
+                // Rotate the facing vector by 90 degrees right
+                const right = facing.applyAxisAngle(new Vector3(0, 1, 0), -Math.PI / 2);
+                const velocity = right.multiplyScalar(speed);
+                // Set the body's velocity
+                ply.body.setVelocity(velocity.x, 0, velocity.z);
             });
             this.input.keyboard.on('keyup-D', () => {
                 ply.body.setVelocity(0, 0, 0);
@@ -115,6 +124,16 @@ export default class MainScene extends Scene3D {
                 phi: 25
             });
             console.log(this.controls);
+
+            // Add controls for phi and theta
+            this.input.on('pointermove', (ptr: Phaser.Input.Pointer) => {
+                if (this.prevMouse) {
+                    const dx = ptr.x - this.prevMouse.x;
+                    const dy = ptr.y - this.prevMouse.y;
+                    this.controls?.update(dx, dy);
+                }
+                this.prevMouse = { x: ptr.x, y: ptr.y };
+            });
 
             hookToMethod(ply.animationMixer, 'update', () => {
                 // Loop through the object's children
@@ -189,8 +208,6 @@ export default class MainScene extends Scene3D {
                 // knight.anims.play(anim, 350);
             }
         });
-
-        knight.body.setAngularVelocityY(10.0);
 
         return knight;
     }
