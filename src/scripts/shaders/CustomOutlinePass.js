@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import { ShaderLib } from 'three';
-import { MeshPhongMaterial } from 'three';
 import { Pass } from 'three/examples/jsm/postprocessing/Pass.js';
 import { ShaderReplacement } from '../lib/ShaderReplacement.js';
 
@@ -19,25 +18,13 @@ class CustomOutlinePass extends Pass {
 
         // Create a buffer to store the normals of the scene onto
         const normalTarget = new THREE.WebGLRenderTarget(this.resolution.x, this.resolution.y);
-        normalTarget.texture.format = THREE.RGBFormat;
-        normalTarget.texture.minFilter = THREE.NearestFilter;
-        normalTarget.texture.magFilter = THREE.NearestFilter;
-        normalTarget.texture.generateMipmaps = false;
-        normalTarget.stencilBuffer = false;
         this.normalTarget = normalTarget;
 
-        this.normalOverrideMaterial = new MeshPhongMaterial({
-            skinning: true, // This doesn't work because some meshes don't have skinning, and override material has to apply to all meshes
-            morphTargets: true,
-            morphNormals: true,
-            flatShading: false
-        });
-
-        this.normalOverrideMaterial.onBeforeCompile = (shader) => {
-            shader.fragmentShader = `${shader.fragmentShader.slice(0, -1)}
-            gl_FragColor = vec4(normalize(vNormal), 1.0);
-            }`;
-        };
+        // this.normalOverrideMaterial.onBeforeCompile = (shader) => {
+        //     shader.fragmentShader = `${shader.fragmentShader.slice(0, -1)}
+        //     gl_FragColor = vec4(normalize(vNormal), 1.0);
+        //     }`;
+        // };
     }
 
     dispose() {
@@ -67,11 +54,6 @@ class CustomOutlinePass extends Pass {
         // Ideally we could capture this in the first render pass along with
         // the depth texture.
         renderer.setRenderTarget(this.normalTarget);
-
-        // const overrideMaterialValue = this.renderScene.overrideMaterial;
-        // this.renderScene.overrideMaterial = this.normalOverrideMaterial;
-        // renderer.render(this.renderScene, this.renderCamera);
-        // this.renderScene.overrideMaterial = overrideMaterialValue;
 
         const shaderReplacement = new ShaderReplacement(ShaderLib.normal);
         shaderReplacement.replace(this.renderScene, true, true);
