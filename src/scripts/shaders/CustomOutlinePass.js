@@ -26,23 +26,18 @@ class CustomOutlinePass extends Pass {
         normalTarget.stencilBuffer = false;
         this.normalTarget = normalTarget;
 
-        // this.normalOverrideMaterial = new THREE.MeshNormalMaterial({
-        //   skinning: true,
-        //   morphTargets: true,
-        // });
-
         this.normalOverrideMaterial = new MeshPhongMaterial({
             skinning: true, // This doesn't work because some meshes don't have skinning, and override material has to apply to all meshes
             morphTargets: true,
             morphNormals: true,
             flatShading: false
         });
+
         this.normalOverrideMaterial.onBeforeCompile = (shader) => {
             shader.fragmentShader = `${shader.fragmentShader.slice(0, -1)}
             gl_FragColor = vec4(normalize(vNormal), 1.0);
             }`;
         };
-        console.log(this.normalOverrideMaterial);
     }
 
     dispose() {
