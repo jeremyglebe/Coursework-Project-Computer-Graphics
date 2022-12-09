@@ -17,6 +17,7 @@ export default class MainScene extends Scene3D {
     prevMouse: { x: number; y: number } | null = null;
     controls: ThirdPersonControls | null = null;
     player: ExtendedObject3D | null = null;
+    key_shift: Phaser.Input.Keyboard.Key | null = null;
 
     constructor() {
         super({ key: 'MainScene' });
@@ -27,6 +28,12 @@ export default class MainScene extends Scene3D {
     }
 
     create() {
+        this.input.on('pointerdown', (pointer) => {
+            this.input.mouse.requestPointerLock();
+        });
+        // Create phaser key for shift
+        this.key_shift = this.input.keyboard.addKey('SHIFT');
+
         // creates a nice scene
         this.third.warpSpeed();
         // this.third.physics.debug?.enable();
@@ -123,11 +130,13 @@ export default class MainScene extends Scene3D {
                 theta: 180, // in degrees
                 phi: 25
             });
-            console.log(this.controls);
 
             // Add controls for phi and theta
             this.input.on('pointermove', (ptr: Phaser.Input.Pointer) => {
-                if (this.prevMouse) {
+                if (ptr.locked) {
+                    this.controls?.update(ptr.movementX, ptr.movementY);
+                }
+                else if (this.prevMouse && this.key_shift?.isDown) {
                     const dx = ptr.x - this.prevMouse.x;
                     const dy = ptr.y - this.prevMouse.y;
                     this.controls?.update(dx, dy);
