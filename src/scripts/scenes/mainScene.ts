@@ -1,4 +1,12 @@
-import { EffectComposer, ExtendedObject3D, RenderPass, Scene3D, ShaderPass, THREE } from '@enable3d/phaser-extension';
+import {
+    EffectComposer,
+    ExtendedObject3D,
+    RenderPass,
+    Scene3D,
+    ShaderPass,
+    ThirdPersonControls,
+    THREE
+} from '@enable3d/phaser-extension';
 import { ApplyToonShader } from '../shaders/ToonShader';
 import { CustomOutlinePass } from '../shaders/CustomOutlinePass.js';
 import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader.js';
@@ -6,8 +14,11 @@ import { hookToMethod } from '../utils/hook';
 import { MeshPhongMaterial } from 'three';
 
 export default class MainScene extends Scene3D {
+    controls: ThirdPersonControls | null;
+
     constructor() {
         super({ key: 'MainScene' });
+        this.controls = null;
     }
 
     init() {
@@ -47,8 +58,6 @@ export default class MainScene extends Scene3D {
         effectFXAA.uniforms['resolution'].value.set(1 / window.innerWidth, 1 / window.innerHeight);
         this.third.composer.addPass(effectFXAA);
 
-        console.log(this);
-
         const prom_ply = this.createKnight(0, 2, -5, true);
         prom_ply.then((ply) => {
             this.input.keyboard.on('keydown-W', () => {
@@ -76,26 +85,19 @@ export default class MainScene extends Scene3D {
                 ply.body.setVelocity(0, 0, 0);
             });
 
-            console.log(ply);
-
-            let normalMaterial;
+            this.controls = new ThirdPersonControls(this.third.camera, ply, {
+                offset: new THREE.Vector3(-2, 4, 0),
+                targetRadius: 7,
+                theta: 180, // in degrees
+                phi: 25
+            });
+            console.log(this.controls);
 
             hookToMethod(ply.animationMixer, 'update', () => {
                 // Loop through the object's children
                 ply.traverse((child) => {
                     // If the child is a mesh, update its morph targets
                     if (child.isMesh) {
-                        // Clone the child material
-                        if (!normalMaterial) {
-                            normalMaterial = new MeshPhongMaterial();
-                            normalMaterial.copy(child.material);
-                            normalMaterial.onBeforeCompile = (shader) => {
-                                shader.fragmentShader = `${shader.fragmentShader.slice(0, -1)}
-                                gl_FragColor = vec4(normalize(vNormal), 1.0);
-                                }`;
-                            };
-                            customOutline.normalMaterialOverride = normalMaterial;
-                        }
                     }
                 });
             });
@@ -104,7 +106,9 @@ export default class MainScene extends Scene3D {
         this.third.lights.pointLight({ color: 'white', intensity: 3, distance: 10 }).position.set(0, 1, 0);
     }
 
-    update() {}
+    update() {
+        if (this.controls) this.controls.update(0, 0);
+    }
 
     async createKnight(x, y, z, toonShade): Promise<ExtendedObject3D> {
         const knight = new ExtendedObject3D();
