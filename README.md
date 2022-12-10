@@ -1,5 +1,7 @@
 # Cel Shader Project
 
+[**VIEW THE PROJECT REPORT HERE**](Report.md)
+
 ## Technologies
 - JavaScript/TypeScript
 - WebGL (Custom Shaders)
