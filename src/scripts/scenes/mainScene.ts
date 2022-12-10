@@ -6,7 +6,7 @@ import {
     ThirdPersonControls,
     THREE
 } from '@enable3d/phaser-extension';
-import { ApplyToonShader, ToonPhShaderPackage } from '../shaders/ToonShader';
+import { ApplyToonShader } from '../shaders/ToonShader';
 import { DrawOutlinePass } from '../post-processing/DrawOutlinePass';
 import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader.js';
 import { hookToMethod } from '../utils/hook';
@@ -48,8 +48,14 @@ export default class MainScene extends Scene3D {
         const { lights } = await this.third.warpSpeed();
         this.worldLights = lights as any;
         this.worldLights.ambientLight.intensity = 0.2;
-        this.worldLights.hemisphereLight.intensity = 0.5;
+        this.worldLights.hemisphereLight.intensity = 0.7;
         this.worldLights.directionalLight.intensity = 2.0;
+
+        // Add a closer white light just for shade testing
+        const white = this.spawnColorSphere(-10, 1, 10, 0xffffff, 5, 20);
+        // Add a green light & sphere for fun
+        const sphere = this.spawnColorSphere(10, 3, 10, 0x00ff00);
+
         // this.third.physics.debug?.enable();
 
         const depthTexture = new THREE.DepthTexture(window.innerWidth, window.innerHeight);
@@ -159,6 +165,26 @@ export default class MainScene extends Scene3D {
     update() {
         if (this.controls) this.controls.update(0, 0);
         if (this.input.mousePointer.locked && !this.cinematic) this.player?.update();
+    }
+
+    async spawnColorSphere(
+        x,
+        y,
+        z,
+        color: number = 0xffffff,
+        intensity: number = 3,
+        distance: number = 10
+    ): Promise<THREE.Mesh> {
+        const light = new THREE.PointLight(color, intensity, distance);
+        light.position.set(x, y, z);
+        this.third.add.existing(light);
+        const sphere = new THREE.Mesh(
+            new THREE.SphereGeometry(distance / 20, 32, 32),
+            new THREE.MeshBasicMaterial({ color: color })
+        );
+        sphere.position.set(x, y, z);
+        this.third.add.existing(sphere);
+        return sphere;
     }
 
     async spawnPlayer(x, y, z, toonShade): Promise<PCSoldier> {

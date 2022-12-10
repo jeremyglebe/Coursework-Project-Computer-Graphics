@@ -5,7 +5,8 @@
   "scripts": {
     "start": "webpack-dev-server --config webpack/webpack.dev.js",
     "build": "webpack --config webpack/webpack.prod.js",
-    "serve": "serve dist"
+    "serve": "serve dist",
+    "publish": "git subtree push  --prefix dist origin gh-pages"
   },
   "author": {
     "name": "Jeremy Glebe",

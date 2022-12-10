@@ -19,7 +19,28 @@ class DrawOutlinePass extends Pass {
         this.camera = camera;
         this.resolution = new THREE.Vector2(resolution.x, resolution.y);
         this.shaderQuad = new Pass.FullScreenQuad();
-        this.shaderQuad.material = this.createOutlinePostProcessMaterial();
+        this.shaderQuad.material = new THREE.ShaderMaterial({
+            uniforms: {
+                // These three textures will be replaced before actually rendering
+                originalTexture: { value: null },
+                depthTexture: { value: null },
+                normalTexture: { value: null },
+                // Color of the object outlines
+                outlineColor: { value: new THREE.Color(0x000000) },
+                // Determines depth values that are considered to be edges
+                cameraNear: { value: this.camera.near },
+                cameraFar: { value: this.camera.far },
+                // Screen ratios needed for depth texture sampling
+                scrRatios: {
+                    value: new THREE.Vector2(
+                        1 / this.resolution.x,
+                        1 / this.resolution.y
+                    )
+                }
+            },
+            vertexShader: OutlineVertShader,
+            fragmentShader: OutlineFragShader
+        });
         this.normalRenderingTarget = new THREE.WebGLRenderTarget(this.resolution.x, this.resolution.y);
     }
 
@@ -89,30 +110,6 @@ class DrawOutlinePass extends Pass {
         }
     }
 
-    createOutlinePostProcessMaterial() {
-        return new THREE.ShaderMaterial({
-            uniforms: {
-                // These three textures will be replaced before actually rendering
-                originalTexture: { value: null },
-                depthTexture: { value: null },
-                normalTexture: { value: null },
-                // Color of the object outlines
-                outlineColor: { value: new THREE.Color(0x000000) },
-                cameraNear: { value: this.camera.near },
-                cameraFar: { value: this.camera.far },
-                screenSize: {
-                    value: new THREE.Vector4(
-                        this.resolution.x,
-                        this.resolution.y,
-                        1 / this.resolution.x,
-                        1 / this.resolution.y
-                    )
-                }
-            },
-            vertexShader: OutlineVertShader,
-            fragmentShader: OutlineFragShader
-        });
-    }
 }
 
 export { DrawOutlinePass };

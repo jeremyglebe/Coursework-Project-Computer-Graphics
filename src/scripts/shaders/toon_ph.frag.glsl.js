@@ -68,7 +68,7 @@ void main() {
 
     /** TOON SHADING MODIFICATIONS START HERE ************************************************************************/
     // Now try to set all colors to some preset magnitudes
-    vec3 before = gl_FragColor.rgb;
+    vec3 old_light = outgoingLight;
     // Determine what the thresholds should be based on number of thresholds
     // and maximum color intensity
     const int numThresholds = 4;
@@ -79,7 +79,7 @@ void main() {
       thresholds[i] = minThreshold + (maxThreshold - minThreshold) * (float(i) / float(numThresholds - 1));
     }
     // Get the magnitude of the color
-    float mag = length(before);
+    float mag = length(old_light);
     // Get the index of the threshold that is closest to the magnitude
     int index = 0;
     for (int i = 0; i < numThresholds; i++) {
@@ -87,8 +87,10 @@ void main() {
             index = i;
         }
     }
+	// Determine the new light color
+	vec3 toon_light = old_light * (thresholds[index] / mag);
     // Scale the color so its magnitude is equal to the threshold
-    gl_FragColor.rgb = before * (thresholds[index] / mag);
+	gl_FragColor = vec4( toon_light, diffuseColor.a );
     /** TOON SHADING MODIFICATIONS END HERE **************************************************************************/
 
 }
