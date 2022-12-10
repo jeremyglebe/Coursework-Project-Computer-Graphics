@@ -1,17 +1,16 @@
 export default /* glsl */ `
+// <packing> comes from threejs and we are using its perspectiveDepthToViewZ function. This will ensure it easily
+// works within the threejs ecosystem. (As opposed to writing our own function)
 #include <packing>
-// The above include imports "perspectiveDepthToViewZ"
-// and other GLSL functions from ThreeJS we need for reading depth.
-uniform sampler2D sceneColorBuffer;
-uniform sampler2D depthBuffer;
-uniform sampler2D normalBuffer;
+uniform sampler2D originalTexture;
+uniform sampler2D depthTexture;
+uniform sampler2D normalTexture;
 uniform float cameraNear;
 uniform float cameraFar;
 uniform vec4 screenSize;
 uniform vec3 outlineColor;
 uniform vec4 multiplierParameters;
 uniform int debugVisualize;
-
 varying vec2 vUv;
 
 // Helper functions for reading from depth buffer.
@@ -20,22 +19,14 @@ float readDepth (sampler2D depthSampler, vec2 coord) {
 	float viewZ = perspectiveDepthToViewZ( fragCoordZ, cameraNear, cameraFar );
 	return viewZToOrthographicDepth( viewZ, cameraNear, cameraFar );
 }
-float getLinearDepth(vec3 pos) {
-	return -(viewMatrix * vec4(pos, 1.0)).z;
-}
-
-float getLinearScreenDepth(sampler2D map) {
-	vec2 uv = gl_FragCoord.xy * screenSize.zw;
-	return readDepth(map,uv);
-}
 // Helper functions for reading normals and depth of neighboring pixels.
 float getPixelDepth(int x, int y) {
 	// screenSize.zw is pixel size 
 	// vUv is current position
-	return readDepth(depthBuffer, vUv + screenSize.zw * vec2(x, y));
+	return readDepth(depthTexture, vUv + screenSize.zw * vec2(x, y));
 }
 vec3 getPixelNormal(int x, int y) {
-	return texture2D(normalBuffer, vUv + screenSize.zw * vec2(x, y)).rgb;
+	return texture2D(normalTexture, vUv + screenSize.zw * vec2(x, y)).rgb;
 }
 
 float saturate(float num) {
@@ -43,7 +34,7 @@ float saturate(float num) {
 }
 
 void main() {
-	vec4 sceneColor = texture2D(sceneColorBuffer, vUv);
+	vec4 sceneColor = texture2D(originalTexture, vUv);
 	float depth = getPixelDepth(0, 0);
 	vec3 normal = getPixelNormal(0, 0);
 
@@ -66,19 +57,8 @@ void main() {
 	normalDiff += distance(normal, getPixelNormal(-1, 1));
 	normalDiff += distance(normal, getPixelNormal(-1, -1));
 
-	// Apply multiplier & bias to each 
-	float depthBias = multiplierParameters.x;
-	float depthMultiplier = multiplierParameters.y;
-	float normalBias = multiplierParameters.z;
-	float normalMultiplier = multiplierParameters.w;
-
-	depthDiff = depthDiff * depthMultiplier;
 	depthDiff = saturate(depthDiff);
-	depthDiff = pow(depthDiff, depthBias);
-
-	normalDiff = normalDiff * normalMultiplier;
 	normalDiff = saturate(normalDiff);
-	normalDiff = pow(normalDiff, normalBias);
 
 
 	float outline = normalDiff + depthDiff;

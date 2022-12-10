@@ -1,3 +1,4 @@
+import { ShaderLib } from 'three';
 import ToonPhFragShader from '../shaders/toon_ph.frag.glsl.js';
 
 export function ApplyToonShader(mesh, layers) {
@@ -7,3 +8,12 @@ export function ApplyToonShader(mesh, layers) {
         shader.fragmentShader = ToonPhFragShader;
     };
 }
+
+export const ToonPhShaderPackage = {
+    defines: {
+        PHONG: ''
+    },
+    uniforms: ShaderLib.phong.uniforms,
+    vertexShader: ShaderLib.phong.vertexShader,
+    fragmentShader: ToonPhFragShader
+};
