@@ -1,5 +1,6 @@
 import {
     EffectComposer,
+    ExtendedObject3D,
     RenderPass,
     Scene3D,
     ShaderPass,
@@ -45,16 +46,19 @@ export default class MainScene extends Scene3D {
         });
 
         // creates a nice scene
-        const { lights } = await this.third.warpSpeed();
-        this.worldLights = lights as any;
-        this.worldLights.ambientLight.intensity = 0.2;
-        this.worldLights.hemisphereLight.intensity = 0.7;
-        this.worldLights.directionalLight.intensity = 2.0;
+        this.third.scene.background = new THREE.Color(0x000000);
+        const warp = await this.third.warpSpeed('-sky');
+        this.worldLights = warp.lights as any;
+        this.worldLights.ambientLight.intensity = 0.25;
+        this.worldLights.hemisphereLight.intensity = 0.35;
+        this.worldLights.directionalLight.intensity = 0.2;
 
-        // Add a closer white light just for shade testing
-        const white = this.spawnColorSphere(-10, 1, 10, 0xffffff, 5, 20);
-        // Add a green light & sphere for fun
-        const sphere = this.spawnColorSphere(10, 3, 10, 0x00ff00);
+        // Fun light sources
+        const white = this.spawnColorSphere(0, 4, -10, 0xffffff);
+        const red = this.spawnColorSphere(-9, 4, 9, 0xff0000, 3, 15);
+        const green = this.spawnColorSphere(9, 4, 9, 0x00ff00, 3, 15);
+        // Create the boss
+        const boss = await this.spawnTheBoss(9, 0, 5);
 
         // this.third.physics.debug?.enable();
 
@@ -185,6 +189,25 @@ export default class MainScene extends Scene3D {
         sphere.position.set(x, y, z);
         this.third.add.existing(sphere);
         return sphere;
+    }
+
+    async spawnTheBoss(x, y, z): Promise<ExtendedObject3D> {
+        const the_boss = new ExtendedObject3D();
+        const boss_model = await this.third.load.fbx('./assets/fbx/TheBoss.fbx');
+        the_boss.add(boss_model);
+        the_boss.scale.set(0.1, 0.1, 0.1);
+        the_boss.position.set(x, y, z);
+        the_boss.scale.set(0.025, 0.025, 0.025);
+        this.third.add.existing(the_boss);
+        this.third.animationMixers.add(the_boss.anims.mixer);
+        the_boss.anims.add('Idle', boss_model.animations[0]);
+        the_boss.anims.play('Idle');
+        the_boss.traverse((child) => {
+            if (child.isMesh) {
+                ApplyToonShader(child, 4);
+            }
+        });
+        return the_boss;
     }
 
     async spawnPlayer(x, y, z, toonShade): Promise<PCSoldier> {
