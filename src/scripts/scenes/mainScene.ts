@@ -8,7 +8,7 @@ import {
     THREE
 } from '@enable3d/phaser-extension';
 import { ApplyToonShader } from '../shaders/ToonShader';
-import { CustomOutlinePass } from '../shaders/CustomOutlinePass.js';
+import { CustomOutlinePass } from '../post-processing/CustomOutlinePass.js';
 import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader.js';
 import { hookToMethod } from '../utils/hook';
 import { Vector3 } from 'three';

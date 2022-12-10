@@ -2,8 +2,8 @@ import * as THREE from 'three';
 import { ShaderLib } from 'three';
 import { Pass } from 'three/examples/jsm/postprocessing/Pass.js';
 import { ShaderReplacement } from '../lib/ShaderReplacement.js';
-import OutlineFragShader from './outline.frag.glsl.js';
-import OutlineVertShader from './outline.vert.glsl.js';
+import OutlineFragShader from '../shaders/outline.frag.glsl.js';
+import OutlineVertShader from '../shaders/outline.vert.glsl.js';
 
 // Follows the structure of
 // 		https://github.com/mrdoob/three.js/blob/master/examples/jsm/postprocessing/OutlinePass.js
@@ -22,11 +22,6 @@ class CustomOutlinePass extends Pass {
         const normalTarget = new THREE.WebGLRenderTarget(this.resolution.x, this.resolution.y);
         this.normalTarget = normalTarget;
 
-        // this.normalOverrideMaterial.onBeforeCompile = (shader) => {
-        //     shader.fragmentShader = `${shader.fragmentShader.slice(0, -1)}
-        //     gl_FragColor = vec4(normalize(vNormal), 1.0);
-        //     }`;
-        // };
     }
 
     dispose() {
