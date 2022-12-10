@@ -1,13 +1,11 @@
 import {
     EffectComposer,
-    ExtendedObject3D,
     RenderPass,
     Scene3D,
     ShaderPass,
     ThirdPersonControls,
     THREE
 } from '@enable3d/phaser-extension';
-import { ShaderReplacement } from '../lib/ShaderReplacement.js';
 import { ApplyToonShader, ToonPhShaderPackage } from '../shaders/ToonShader';
 import { DrawOutlinePass } from '../post-processing/DrawOutlinePass';
 import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader.js';
