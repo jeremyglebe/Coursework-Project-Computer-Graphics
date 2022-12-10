@@ -36,8 +36,12 @@
       background-color: #000000;
     }
 
-    #phaser-game {
-      /* cursor: none; */
+    .prompts {
+      position: absolute;
+      top: 0;
+      left: 0;
+      color: #ffffff;
+      font-size: 2em;
     }
   </style>
 
@@ -55,6 +59,11 @@
 
 <body>
   <div id="phaser-game"></div>
+  <!-- Prompt to use WASD to move -->
+  <div class="prompts">
+    Use WASD keys to move<br />
+    Use C key to toggle character looking at camera
+  </div>
 </body>
 
 </html>

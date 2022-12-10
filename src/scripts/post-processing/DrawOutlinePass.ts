@@ -92,7 +92,6 @@ class DrawOutlinePass extends Pass {
     createOutlinePostProcessMaterial() {
         return new THREE.ShaderMaterial({
             uniforms: {
-                debugVisualize: { value: 0 },
                 // These three textures will be replaced before actually rendering
                 originalTexture: { value: null },
                 depthTexture: { value: null },
